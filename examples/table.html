@@ -22,7 +22,13 @@
 
 
     <table id="demo" lay-filter="demo"></table>
-
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData">获取选中行数据</button>
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>
+            <button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>
+        </div>
+    </script>
     <script src="../src/layui.js" charset="utf-8"></script>
     <script>
         layui.use('table', function() {
@@ -30,11 +36,11 @@
             //直接赋值数据
             table.render({
                 elem: '#demo',
+                toolbar: '#toolbarDemo',
                 cols: [
                     [ //标题栏
                         {
                             type: 'checkbox',
-                            LAY_CHECKED: true
                         }, {
                             field: 'id',
                             title: 'ID',
@@ -68,6 +74,7 @@
                     ]
                 ],
                 data: [{
+                    "LAY_DISABLED": true,
                     "id": "10001",
                     "username": "杜甫",
                     "email": "xianxin@layui.com",
@@ -171,7 +178,22 @@
                 limit: 3 //每页默认显示的数量
                     //,loading: false //请求数据时，是否显示loading
             });
-
+            table.on('toolbar(demo)', function(obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'getCheckData':
+                        var data = checkStatus.data;
+                        layer.alert(JSON.stringify(data));
+                        break;
+                    case 'getCheckLength':
+                        var data = checkStatus.data;
+                        layer.msg('选中了：' + data.length + ' 个');
+                        break;
+                    case 'isAll':
+                        layer.msg(checkStatus.isAll ? '全选' : '未全选')
+                        break;
+                };
+            });
 
         });
     </script>
