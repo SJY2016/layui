@@ -24,6 +24,8 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
             checkName: 'LAY_CHECKED' //是否选中状态的字段名
                 ,
             indexName: 'LAY_TABLE_INDEX' //下标索引名
+                ,
+            disableName: 'LAY_DISABLED' //是否禁用
         } //全局配置项
         ,
         cache: {} //数据缓存
@@ -96,7 +98,7 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
                 }
                 return '';
             }(), '{{# var isSort = !(item2.colGroup) && item2.sort; }}', '<th data-field="{{ item2.field||i2 }}" data-key="{{d.index}}-{{i1}}-{{i2}}" {{# if( item2.parentKey){ }}data-parentkey="{{ item2.parentKey }}"{{# } }} {{# if(item2.minWidth){ }}data-minwidth="{{item2.minWidth}}"{{# } }} ' + rowCols + ' {{# if(item2.unresize || item2.colGroup){ }}data-unresize="true"{{# } }} class="{{# if(item2.hide){ }}layui-hide{{# } }}{{# if(isSort){ }} layui-unselect{{# } }}{{# if(!item2.field){ }} layui-table-col-special{{# } }}">', '<div class="layui-table-cell laytable-cell-', '{{# if(item2.colGroup){ }}', 'group', '{{# } else { }}', '{{d.index}}-{{i1}}-{{i2}}', '{{# if(item2.type !== "normal"){ }}', ' laytable-cell-{{ item2.type }}', '{{# } }}', '{{# } }}', '" {{#if(item2.align){}}align="{{item2.align}}"{{#}}}>', '{{# if(item2.type === "checkbox"){ }}' //复选框
-            , '<input type="checkbox" name="layTableCheckbox" lay-skin="primary" lay-filter="layTableAllChoose" {{# if(item2[d.data.checkName]){ }}checked{{# }; }}>', '{{# } else { }}', '<span>{{item2.title||""}}</span>', '{{# if(isSort){ }}', '<span class="layui-table-sort layui-inline"><i class="layui-edge layui-table-sort-asc" title="升序"></i><i class="layui-edge layui-table-sort-desc" title="降序"></i></span>', '{{# } }}', '{{# } }}', '</div>', '</th>', (options.fixed ? '{{# }; }}' : ''), '{{# }); }}', '</tr>', '{{# }); }}', '</thead>', '</table>'
+            , '<input type="checkbox" name="layTableCheckbox" lay-skin="primary" lay-filter="layTableAllChoose" {{# if(item2[d.data.disableName]){ }} disabled {{# }; }}  {{# if(item2[d.data.checkName]){ }}checked{{# }; }}>', '{{# } else { }}', '<span>{{item2.title||""}}</span>', '{{# if(isSort){ }}', '<span class="layui-table-sort layui-inline"><i class="layui-edge layui-table-sort-asc" title="升序"></i><i class="layui-edge layui-table-sort-desc" title="降序"></i></span>', '{{# } }}', '{{# } }}', '</div>', '</th>', (options.fixed ? '{{# }; }}' : ''), '{{# }); }}', '</tr>', '{{# }); }}', '</thead>', '</table>'
         ].join('');
     }
 
@@ -689,7 +691,8 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
                         var tplData = $.extend(true, {
                                 LAY_INDEX: numbers
                             }, item1),
-                            checkName = table.config.checkName;
+                            checkName = table.config.checkName,
+                            disableName = table.config.disableName;
 
                         //渲染不同风格的列
                         switch (item3.type) {
@@ -699,8 +702,16 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
                                     if (item3[checkName]) {
                                         item1[checkName] = item3[checkName];
                                         return item3[checkName] ? 'checked' : '';
+                                    } else if (item3[disableName]) {
+                                        return item3[disableName] ? 'disabled' : '';
                                     }
                                     return tplData[checkName] ? 'checked' : '';
+                                }() + '  ' + function() {
+                                    //如果是禁用
+                                    if (item3[disableName]) {
+                                        return item3[disableName] ? 'disabled' : '';
+                                    }
+                                    return tplData[disableName] ? 'disabled' : '';
                                 }() + '>';
                                 break;
                             case 'radio':
@@ -1374,7 +1385,7 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
         //复选框选择
         that.elem.on('click', 'input[name="layTableCheckbox"]+', function() { //替代元素的 click 事件
             var checkbox = $(this).prev(),
-                childs = that.layBody.find('input[name="layTableCheckbox"]'),
+                childs = that.layBody.find('input[name="layTableCheckbox"]:not(:disabled)'),
                 index = checkbox.parents('tr').eq(0).data('index'),
                 checked = checkbox[0].checked,
                 isAll = checkbox.attr('lay-filter') === 'layTableAllChoose';
@@ -1383,7 +1394,8 @@ layui.define(['laytpl', 'laypage', 'layer', 'form', 'util'], function(exports) {
             if (isAll) {
                 childs.each(function(i, item) {
                     item.checked = checked;
-                    that.setCheckData(i, checked);
+                    var index = $(this).closest("tr").data("index");
+                    that.setCheckData(index, checked);
                 });
                 that.syncCheckAll();
                 that.renderForm('checkbox');
